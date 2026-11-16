@@ -40,7 +40,12 @@ function loadArticles() {
 }
 
 function saveArticles(articles) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(articles, null, 2));
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(articles, null, 2));
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
 }
 
 function formatDateDa(dateStr) {
@@ -647,7 +652,10 @@ app.post('/admin/new/', requireAuth, (req, res) => {
     createdAt: new Date().toISOString(),
   };
   articles.push(newArticle);
-  saveArticles(articles);
+  const result = saveArticles(articles);
+  if (!result.success) {
+    return res.status(500).send(`<h1>Save error</h1><p>${result.error}</p><a href="/admin/new/">Try again</a>`);
+  }
   res.redirect(`/artikler/${slug}/`);
 });
 
@@ -746,14 +754,19 @@ app.post('/admin/edit/:slug/', requireAuth, (req, res) => {
     content: req.body.content || '',
     updatedAt: new Date().toISOString(),
   };
-  saveArticles(articles);
+  const result = saveArticles(articles);
+  if (!result.success) {
+    return res.status(500).send(`<h1>Save error</h1><p>${result.error}</p><a href="/admin/edit/${req.params.slug}/">Try again</a>`);
+  }
   res.redirect(`/artikler/${newSlug}/`);
 });
 
 app.post('/admin/delete/:slug/', requireAuth, (req, res) => {
   let articles = loadArticles();
-  articles = articles.filter(a => a.slug !== req.params.slug);
-  saveArticles(articles);
+  const result = saveArticles(articles.filter(a => a.slug !== req.params.slug));
+  if (!result.success) {
+    return res.status(500).send(`<h1>Save error</h1><p>${result.error}</p><a href="/admin/">Try again</a>`);
+  }
   res.redirect('/admin/');
 });
 
