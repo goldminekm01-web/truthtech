@@ -1,5 +1,4 @@
 const express = require('express');
-const cookieParser = require('cookie-parser');
 const path = require('path');
 const { marked } = require('marked');
 const admin = require('firebase-admin');
@@ -7,7 +6,6 @@ const admin = require('firebase-admin');
 const app = express();
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'antigravity2024';
 const ADMIN_COOKIE = 'tm_admin';
-const ADMIN_COOKIE_SECRET = process.env.ADMIN_COOKIE_SECRET || 'truthmedia-admin-secret-change-in-production';
 
 // ---------- Firestore: database / truth ----------
 let adminDb;
@@ -276,7 +274,6 @@ function recordVisitor(req) {
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(cookieParser(ADMIN_COOKIE_SECRET));
 app.use((req, res, next) => { recordVisitor(req); next(); });
 
 const cookieOptions = {
@@ -284,11 +281,11 @@ const cookieOptions = {
   secure: process.env.VERCEL === '1',
   sameSite: 'lax',
   maxAge: 24 * 60 * 60 * 1000,
-  signed: true,
 };
 
 function isAdmin(req) {
-  return req.signedCookies && req.signedCookies[ADMIN_COOKIE] === '1';
+  const cookie = req.headers.cookie || '';
+  return cookie.includes('tm_admin=1');
 }
 
 function requireAuth(req, res, next) {

@@ -282,7 +282,8 @@ const cookieOptions = {
 };
 
 function isAdmin(req) {
-  return req.signedCookies && req.signedCookies[ADMIN_COOKIE] === '1';
+  const cookie = req.headers.cookie || '';
+  return cookie.includes('tm_admin=1');
 }
 
 function requireAuth(req, res, next) {
