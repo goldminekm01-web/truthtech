@@ -260,8 +260,8 @@ function cardHtml(article, isFeatured = false) {
 // ============ ROUTES ============
 
 // Home
-app.get('/', (req, res) => {
-  const articles = loadArticles().sort((a, b) => new Date(b.date) - new Date(a.date));
+app.get('/', async (req, res) => {
+  const articles = (await loadArticles()).sort((a, b) => new Date(b.date) - new Date(a.date));
   const featured = articles.filter(a => a.featured)[0] || articles[0];
   const latest = articles.filter(a => a !== featured).slice(0, 6);
 
@@ -313,8 +313,8 @@ app.get('/', (req, res) => {
 });
 
 // Article detail
-app.get('/artikler/:slug/', (req, res) => {
-  const articles = loadArticles();
+app.get('/artikler/:slug/', async (req, res) => {
+  const articles = await loadArticles();
   const article = articles.find(a => a.slug === req.params.slug);
   if (!article) return res.status(404).send(layout('404', '<h1>Siden findes ikke</h1><p>Artiklen blev ikke fundet.</p><a href="/" class="btn">Gå til forsiden</a>'));
 
@@ -368,11 +368,11 @@ app.get('/artikler/:slug/', (req, res) => {
 });
 
 // Category page
-app.get('/kategori/:slug/', (req, res) => {
+app.get('/kategori/:slug/', async (req, res) => {
   const cat = categories.find(c => c.slug === req.params.slug);
   if (!cat) return res.status(404).send(layout('404', '<h1>Kategori ikke fundet</h1><a href="/" class="btn">Gå til forsiden</a>'));
 
-  const articles = loadArticles()
+  const articles = (await loadArticles())
     .filter(a => a.category === cat.slug)
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -490,8 +490,8 @@ app.use((req, res) => {
 });
 
 // RSS feed
-app.get('/feed.xml', (req, res) => {
-  const articles = loadArticles().sort((a, b) => new Date(b.date) - new Date(a.date));
+app.get('/feed.xml', async (req, res) => {
+  const articles = (await loadArticles()).sort((a, b) => new Date(b.date) - new Date(a.date));
   const items = articles.map(a => `
     <item>
       <title><![CDATA[${a.title}]]></title>
@@ -522,8 +522,8 @@ ${items}
 });
 
 // Sitemap
-app.get('/sitemap.xml', (req, res) => {
-  const articles = loadArticles();
+app.get('/sitemap.xml', async (req, res) => {
+  const articles = await loadArticles();
   const routes = [
     { url: '/', changefreq: 'weekly', priority: '1.0' },
     { url: '/om/', changefreq: 'monthly', priority: '0.5' },
@@ -587,8 +587,8 @@ app.get('/admin/logout', (req, res) => {
   res.redirect('/admin/login');
 });
 
-app.get('/admin/', requireAuth, (req, res) => {
-  const articles = loadArticles().sort((a, b) => new Date(b.date) - new Date(a.date));
+app.get('/admin/', requireAuth, async (req, res) => {
+  const articles = (await loadArticles()).sort((a, b) => new Date(b.date) - new Date(a.date));
   const rows = articles.map(a => `
     <tr>
       <td>${a.title}</td>
@@ -692,8 +692,8 @@ app.get('/admin/new/', requireAuth, (req, res) => {
   res.send(layout('Ny artikel', body, '', true));
 });
 
-app.post('/admin/new/', requireAuth, (req, res) => {
-  const articles = loadArticles();
+app.post('/admin/new/', requireAuth, async (req, res) => {
+  const articles = await loadArticles();
   const slug = slugify(req.body.title);
   const sources = req.body.sources ? req.body.sources.split('\n').filter(s => s.trim()) : [];
   const newArticle = {
@@ -720,8 +720,8 @@ app.post('/admin/new/', requireAuth, (req, res) => {
   res.redirect(`/artikler/${slug}/`);
 });
 
-app.get('/admin/edit/:slug/', requireAuth, (req, res) => {
-  const articles = loadArticles();
+app.get('/admin/edit/:slug/', requireAuth, async (req, res) => {
+  const articles = await loadArticles();
   const article = articles.find(a => a.slug === req.params.slug);
   if (!article) return res.status(404).send('Artikel ikke fundet');
 
@@ -790,8 +790,8 @@ app.get('/admin/edit/:slug/', requireAuth, (req, res) => {
   res.send(layout('Edit article', body, '', true));
 });
 
-app.post('/admin/edit/:slug/', requireAuth, (req, res) => {
-  const articles = loadArticles();
+app.post('/admin/edit/:slug/', requireAuth, async (req, res) => {
+  const articles = await loadArticles();
   const idx = articles.findIndex(a => a.slug === req.params.slug);
   if (idx === -1) return res.status(404).send('Article not found');
 
