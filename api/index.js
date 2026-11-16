@@ -17,7 +17,7 @@ try {
       credential: admin.credential.cert(serviceAccount),
       databaseURL: process.env.FIREBASE_DATABASE_URL,
     });
-    adminDb = admin.database();
+    adminDb = admin.firestore();
   } else {
     console.warn('FIREBASE_SERVICE_ACCOUNT not set — using in-memory fallback');
   }
@@ -127,12 +127,9 @@ function githubRequest(method, path, body) {
 async function loadArticles() {
   try {
     if (adminDb) {
-      const snapshot = await adminDb.ref('articles').once('value');
-      const data = snapshot.val();
-      if (data) {
-        return Object.keys(data).map(key => ({ id: key, ...data[key] }));
-      }
-      return [];
+      const snapshot = await adminDb.collection('articles').get();
+      if (snapshot.empty) return [];
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
     return [];
   } catch (e) {
@@ -143,7 +140,15 @@ async function loadArticles() {
 async function saveArticles(articles) {
   try {
     if (adminDb) {
-      await adminDb.ref('articles').set(articles);
+      const batch = adminDb.batch();
+      const existing = await adminDb.collection('articles').get();
+      existing.forEach(doc => batch.delete(doc.ref));
+      articles.forEach((a, i) => {
+        const docRef = adminDb.collection('articles').doc(a.id || `article_${i}`);
+        const { id, ...data } = a;
+        batch.set(docRef, data);
+      });
+      await batch.commit();
       return { success: true };
     }
     return { success: false, error: 'Firebase not initialized' };
