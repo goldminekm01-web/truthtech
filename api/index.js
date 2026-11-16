@@ -26,6 +26,56 @@ const site = {
   address: { city: "København", country: "Danmark" },
 };
 
+// Visitor tracking (in-memory, resets on serverless cold start)
+let visitors = [];
+
+function getClientIp(req) {
+  return (
+    req.headers['x-forwarded-for'] ||
+    req.headers['x-real-ip'] ||
+    req.socket.remoteAddress ||
+    'unknown'
+  );
+}
+
+async function getGeoLocation(ip) {
+  if (ip === 'unknown' || ip.startsWith('127.') || ip.startsWith('::1') || ip.startsWith('192.168.')) {
+    return { country: 'Local', city: 'Local', ip };
+  }
+  try {
+    const resp = await fetch(`https://ipapi.co/${ip}/json/`);
+    const data = await resp.json();
+    return {
+      ip: data.ip || ip,
+      country: data.country_name || 'Unknown',
+      city: data.city || 'Unknown',
+    };
+  } catch (e) {
+    return { ip, country: 'Unknown', city: 'Unknown' };
+  }
+}
+
+function recordVisitor(req) {
+  const ip = getClientIp(req);
+  const visitor = {
+    ip,
+    country: 'Looking up...',
+    city: 'Looking up...',
+    timestamp: new Date().toISOString(),
+    path: req.originalUrl || req.url,
+  };
+  visitors.unshift(visitor);
+  if (visitors.length > 500) visitors.pop();
+  getGeoLocation(ip).then((geo) => {
+    const v = visitors.find((v) => v.ip === ip && v.timestamp === visitor.timestamp);
+    if (v) {
+      v.country = geo.country;
+      v.city = geo.city;
+    }
+  });
+  return visitor;
+}
+
 const categories = [
   { slug: "ai", label: "AI" },
   { slug: "startups", label: "Startups" },
@@ -260,6 +310,12 @@ app.use(session({
   saveUninitialized: false,
   cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
+
+// Visitor tracking middleware — record every request
+app.use((req, res, next) => {
+  recordVisitor(req);
+  next();
+});
 
 function requireAuth(req, res, next) {
   if (!req.session.isAdmin) {
@@ -607,6 +663,7 @@ app.get('/admin/', requireAuth, async (req, res) => {
           <h1>Admin — ${site.name}</h1>
           <div class="admin-actions">
             <a href="/admin/new/" class="btn">+ New article</a>
+            <a href="/admin/visitors/" class="btn">👥 Visitor Log</a>
             <a href="/admin/logout" class="btn btn--ghost">Log out</a>
           </div>
         </div>
@@ -825,6 +882,39 @@ app.post('/admin/delete/:slug/', requireAuth, (req, res) => {
     return res.status(500).send(`<h1>Save error</h1><p>${result.error}</p><a href="/admin/">Try again</a>`);
   }
   res.redirect('/admin/');
+});
+
+// Admin visitors page
+app.get('/admin/visitors/', requireAuth, (req, res) => {
+  const visitorsList = visitors.map((v) => `
+    <tr>
+      <td>${v.ip}</td>
+      <td>${v.country}</td>
+      <td>${v.city}</td>
+      <td>${new Date(v.timestamp).toLocaleString('da-DK')}</td>
+      <td>${v.path}</td>
+    </tr>
+  `).join('');
+
+  const body = `
+    <section class="admin-visitors">
+      <div class="container">
+        <h1>Visitor Log</h1>
+        <p>Showing the last ${Math.min(visitors.length, 500)} visitors.</p>
+        <table class="admin-table">
+          <thead>
+            <tr><th>IP Address</th><th>Country</th><th>City</th><th>Time (CET)</th><th>Page</th></tr>
+          </thead>
+          <tbody>
+            ${visitorsList || '<tr><td colspan="5">No visitors yet.</td></tr>'}
+          </tbody>
+        </table>
+        <a href="/admin/" class="btn btn--ghost">← Back to admin</a>
+      </div>
+    </section>
+  `;
+
+  res.send(layout('Visitor Log', body, '', true));
 });
 
 app.use((req, res) => {
