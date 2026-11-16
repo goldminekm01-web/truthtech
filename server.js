@@ -74,22 +74,32 @@ async function loadArticles() {
 
 async function saveArticles(articles) {
   try {
-    // Get current file SHA from GitHub
-    const fileResp = await githubRequest('GET', GITHUB_API);
-    if (fileResp.status === 404) {
-      return { success: false, error: 'GitHub repo not found. Set GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO env vars.' };
-    }
-    const sha = fileResp.body.sha;
-    const content = Buffer.from(JSON.stringify(articles, null, 2)).toString('base64');
-    const putResp = await githubRequest('PUT', GITHUB_API, {
-      message: `Update articles via TruthMedia admin (${new Date().toISOString()})`,
-      content,
-      sha,
-    });
-    if (putResp.status >= 200 && putResp.status < 300) {
+    // On Vercel serverless, filesystem is read-only — use GitHub API
+    // Locally, write to the JSON file directly
+    if (process.env.VERCEL) {
+      const fileResp = await githubRequest('GET', GITHUB_API);
+      if (fileResp.status === 404) {
+        return { success: false, error: 'GitHub repo not found. Set GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO env vars.' };
+      }
+      if (fileResp.status >= 400) {
+        return { success: false, error: `GitHub API GET failed: ${fileResp.status} — check GITHUB_TOKEN has repo scope.` };
+      }
+      const sha = fileResp.body.sha;
+      const content = Buffer.from(JSON.stringify(articles, null, 2)).toString('base64');
+      const putResp = await githubRequest('PUT', GITHUB_API, {
+        message: `Update articles via TruthMedia admin (${new Date().toISOString()})`,
+        content,
+        sha,
+      });
+      if (putResp.status >= 200 && putResp.status < 300) {
+        return { success: true };
+      }
+      return { success: false, error: `GitHub API PUT failed: ${putResp.status} — check GITHUB_TOKEN has repo scope.` };
+    } else {
+      // Local development — write to filesystem
+      fs.writeFileSync(DATA_FILE, JSON.stringify(articles, null, 2));
       return { success: true };
     }
-    return { success: false, error: `GitHub API error: ${putResp.status} ${JSON.stringify(putResp.body)}` };
   } catch (e) {
     return { success: false, error: e.message };
   }
