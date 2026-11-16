@@ -276,7 +276,7 @@ function recordVisitor(req) {
 app.use(express.static(path.join(__dirname, 'api', 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(session({ secret: 'truthmedia-secret-key-change-in-production', resave: false, saveUninitialized: false, cookie: { maxAge: 24 * 60 * 60 * 1000 } }));
+app.use(session({ secret: 'truthmedia-secret-key-change-in-production', resave: false, saveUninitialized: false, cookie: { maxAge: 24 * 60 * 60 * 1000, secure: true, sameSite: 'lax' } }));
 
 app.use((req, res, next) => { recordVisitor(req); next(); });
 
