@@ -187,11 +187,28 @@ async function saveArticles(articles) {
   }
 }
 
-function formatDateDa(dateStr) {
+function formatDateDa(dateVal) {
   try {
-    const d = new Date(dateStr);
+    const d = toDate(dateVal);
     return d.toLocaleDateString("da-DK", { day: "numeric", month: "long", year: "numeric" });
-  } catch (e) { return dateStr; }
+  } catch (e) { return String(dateVal); }
+}
+
+function toDate(dateVal) {
+  if (!dateVal) return new Date();
+  if (dateVal.toDate && typeof dateVal.toDate === 'function') return dateVal.toDate(); // Firestore Timestamp
+  if (dateVal instanceof Date) return dateVal;
+  return new Date(dateVal);
+}
+
+function toDateInput(dateVal) {
+  // Returns YYYY-MM-DD for <input type="date">
+  try {
+    const d = toDate(dateVal);
+    return d.toISOString().split('T')[0];
+  } catch (e) {
+    return new Date().toISOString().split('T')[0];
+  }
 }
 
 function slugify(title) {
@@ -314,7 +331,7 @@ function cardHtml(article, isFeatured = false) {
 
 app.get('/', async (req, res) => {
   try {
-    const articles = (await loadArticles()).sort((a, b) => new Date(b.date) - new Date(a.date));
+    const articles = (await loadArticles()).sort((a, b) => toDate(b.date) - toDate(a.date));
     const featured = articles.filter(a => a.featured)[0] || articles[0];
     const latest = articles.filter(a => a !== featured).slice(0, 6);
     let body = `<section class="hero reveal"><div class="container hero-inner"><span class="hero-badge">Topshistorie</span><h1 class="hero-title"><a href="/artikler/${featured.slug}/" style="color:inherit;text-decoration:none;">${featured.title}</a></h1><p class="hero-summary">${featured.summary}</p><div class="hero-meta"><span>${featured.author}</span><span>·</span><time>${formatDateDa(featured.date)}</time><span>·</span><span>${featured.readingTime || '3 min læsning'}</span></div><img src="${featured.image || '/assets/images/placeholder.svg'}" alt="${featured.imageAlt || ''}" class="hero-image" loading="eager"><a href="/artikler/${featured.slug}/" class="hero-cta">Læs hele artiklen<span class="arrow">→</span></a></div></section><section class="reveal"><div class="container"><div class="category-filters"><a href="/" class="chip chip--active">Alle</a>${categories.map(c => `<a href="/kategori/${c.slug}/" class="chip">${c.label}</a>`).join('')}</div><h2 class="section-label section-label--no-top">Seneste artikler</h2><div class="article-grid">${latest.map(a => cardHtml(a)).join('')}</div></div></section><section class="newsletter reveal"><h2>Nyhedsbrev</h2><p>Få de vigtigste teknologinyheder direkte i indbakken hver fredag. Ingen spam, kun stof.</p><form class="newsletter-form" action="#" method="POST" novalidate><input type="email" name="email" placeholder="Din e-mailadresse" required aria-label="E-mailadresse"><button type="submit" class="btn">Tilmeld</button></form><p class="newsletter-disclaimer">Ved tilmelding accepterer du vores vilkår. Du kan til enhver tid afmelde dig.</p></section>`;
@@ -330,7 +347,7 @@ app.get('/artikler/:slug/', async (req, res) => {
     const article = articles.find(a => a.slug === req.params.slug);
     if (!article) return res.status(404).send(layout('404', '<h1>Siden findes ikke</h1><p>Artiklen blev ikke fundet.</p><a href="/" class="btn">Gå til forsiden</a>'));
     const related = articles.filter(a => a.category === article.category && a.slug !== article.slug).slice(0, 3);
-    let body = `<article class="article-wrap reveal"><header class="article-header">${article.sample !== false ? '<span class="badge badge-sample">Prøve</span>' : ''}<span class="article-category">${article.category}</span><span>·</span><time date="${article.date.toISOString()}">${formatDateDa(article.date)}</time><span>·</span><span>${article.readingTime || '3 min læsning'}</span><h1 class="article-title">${article.title}</h1><img src="${article.image || '/assets/images/placeholder.svg'}" alt="${article.imageAlt || ''}" class="article-image" loading="eager">${article.imageAlt ? `<p class="article-image-caption">${article.imageAlt}</p>` : ''}</header><div class="article-body">${marked(article.content || '')}</div>`;
+    let body = `<article class="article-wrap reveal"><header class="article-header">${article.sample !== false ? '<span class="badge badge-sample">Prøve</span>' : ''}<span class="article-category">${article.category}</span><span>·</span><time date="${toDate(article.date).toISOString()}">${formatDateDa(article.date)}</time><span>·</span><span>${article.readingTime || '3 min læsning'}</span><h1 class="article-title">${article.title}</h1><img src="${article.image || '/assets/images/placeholder.svg'}" alt="${article.imageAlt || ''}" class="article-image" loading="eager">${article.imageAlt ? `<p class="article-image-caption">${article.imageAlt}</p>` : ''}</header><div class="article-body">${marked(article.content || '')}</div>`;
     if (article.sources && article.sources.length > 0) {
       body += `<section class="sources"><h3>Kilder</h3><ul>${article.sources.map(src => `<li><a href="${src}" target="_blank" rel="noopener noreferrer">${src}</a></li>`).join('')}</ul></section>`;
     }
@@ -390,8 +407,8 @@ app.get('/404', (req, res) => {
 
 app.get('/feed.xml', async (req, res) => {
   try {
-    const articles = (await loadArticles()).sort((a, b) => new Date(b.date) - new Date(a.date));
-    const items = articles.map(a => `<item><title><![CDATA[${a.title}]]></title><description><![CDATA[${a.summary}]]></description><link>${site.url}/artikler/${a.slug}/</link><pubDate>${new Date(a.date).toUTCString()}</pubDate><author>${a.author}</author><category>${a.category}</category><guid isPermaLink="false">${site.url}/artikler/${a.slug}/</guid></item>`).join('');
+    const articles = (await loadArticles()).sort((a, b) => toDate(b.date) - toDate(a.date));
+    const items = articles.map(a => `<item><title><![CDATA[${a.title}]]></title><description><![CDATA[${a.summary}]]></description><link>${site.url}/artikler/${a.slug}/</link><pubDate>${toDate(a.date).toUTCString()}</pubDate><author>${a.author}</author><category>${a.category}</category><guid isPermaLink="false">${site.url}/artikler/${a.slug}/</guid></item>`).join('');
     const xml = `<?xml version="1.0" encoding="UTF-8" ?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>${site.name} — ${site.tagline}</title><link>${site.url}/</link><description>${site.tagline}</description><language>da-DK</language><lastBuildDate>${new Date().toUTCString()}</lastBuildDate><atom:link href="${site.url}/feed.xml" rel="self" type="application/rss+xml" />${items}</channel></rss>`;
     res.set('Content-Type', 'application/rss+xml; charset=utf-8').send(xml);
   } catch (e) {
