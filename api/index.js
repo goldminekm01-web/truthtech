@@ -111,11 +111,10 @@ function layout(title, body, extraMeta = '', isAdmin = false) {
         <span class="logo-tagline">${site.tagline}</span>
       </a>
       <nav class="main-nav">
-        <a href="/"${title === 'Forside' ? ' aria-current="page"' : ''}>Forside</a>
         ${categories.map(c => `<a href="/kategori/${c.slug}/"${title === c.label ? ' aria-current="page"' : ''}>${c.label}</a>`).join('')}
-        <a href="/om/">Om os</a>
-        <a href="/kontakt/">Kontakt</a>
-        <a href="/rettelser/">Rettelser</a>
+        <a href="/om/"${title === 'Om ${site.name}' ? ' aria-current="page"' : ''}>Om os</a>
+        <a href="/kontakt/"${title.startsWith('Kontakt') ? ' aria-current="page"' : ''}>Kontakt</a>
+        <a href="/rettelser/"${title.startsWith('Rettelser') ? ' aria-current="page"' : ''}>Rettelser</a>
       </nav>
       <div class="header-actions">
         <button class="theme-toggle" id="themeToggle" aria-label="Skift til mørk tilstand">🌙</button>
