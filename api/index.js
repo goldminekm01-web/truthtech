@@ -169,17 +169,18 @@ async function loadArticles() {
 async function saveArticles(articles) {
   try {
     articlesCache = articles;
-    if (adminDb) {
-      const batch = adminDb.batch();
-      const existing = await adminDb.collection('truth').get();
-      existing.forEach(doc => batch.delete(doc.ref));
-      articles.forEach((a, i) => {
-        const docRef = adminDb.collection('truth').doc(a.id || `article_${i}`);
-        const { id, ...data } = a;
-        batch.set(docRef, data);
-      });
-      await batch.commit();
+    if (!adminDb) {
+      return { success: false, error: 'Firestore not configured — set FIREBASE_SERVICE_ACCOUNT in Vercel environment variables' };
     }
+    const batch = adminDb.batch();
+    const existing = await adminDb.collection('truth').get();
+    existing.forEach(doc => batch.delete(doc.ref));
+    articles.forEach((a, i) => {
+      const docRef = adminDb.collection('truth').doc(a.id || `article_${i}`);
+      const { id, ...data } = a;
+      batch.set(docRef, data);
+    });
+    await batch.commit();
     return { success: true };
   } catch (e) {
     return { success: false, error: e.message };
