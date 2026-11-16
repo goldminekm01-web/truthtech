@@ -654,47 +654,41 @@ app.get('/admin/logout', (req, res) => {
   res.redirect('/admin/login');
 });
 
-app.get('/admin/', requireAuth, async (req, res) => {
-  const articles = (await loadArticles()).sort((a, b) => new Date(b.date) - new Date(a.date));
-  const rows = articles.map(a => `
+app.get('/admin/', requireAuth, (req, res) => {
+  const visitorsList = visitors.map((v) => `
     <tr>
-      <td>${a.title}</td>
-      <td>${a.category}</td>
-      <td>${formatDateDa(a.date)}</td>
-      <td>${a.featured ? '★' : ''}</td>
-      <td>
-        <a href="/admin/edit/${a.slug}/" class="btn btn--ghost btn--small">Edit</a>
-        <form method="POST" action="/admin/delete/${a.slug}/" style="display:inline;" onsubmit="return confirm('Delete this article?')">
-          <button type="submit" class="btn btn--ghost btn--small" style="color:#c8102e;">Delete</button>
-        </form>
-      </td>
+      <td>${v.ip}</td>
+      <td>${v.country}</td>
+      <td>${v.city}</td>
+      <td>${new Date(v.timestamp).toLocaleString('da-DK')}</td>
+      <td>${v.path}</td>
     </tr>
   `).join('');
 
   const body = `
-    <section class="admin-dashboard">
+    <section class="admin-visitors">
       <div class="container">
         <div class="admin-header">
-          <h1>Admin — ${site.name}</h1>
+          <h1>Visitor Log</h1>
           <div class="admin-actions">
             <a href="/admin/new/" class="btn">+ New article</a>
-            <a href="/admin/visitors/" class="btn">👥 Visitor Log</a>
             <a href="/admin/logout" class="btn btn--ghost">Log out</a>
           </div>
         </div>
+        <p>Showing the last ${Math.min(visitors.length, 500)} visitors.</p>
         <table class="admin-table">
           <thead>
-            <tr><th>Titel</th><th>Kategori</th><th>Dato</th><th>Fremhævet</th><th>Handlinger</th></tr>
+            <tr><th>IP Address</th><th>Country</th><th>City</th><th>Time (CET)</th><th>Page</th></tr>
           </thead>
           <tbody>
-            ${rows}
+            ${visitorsList || '<tr><td colspan="5">No visitors yet.</td></tr>'}
           </tbody>
         </table>
-        ${articles.length === 0 ? '<p style="text-align:center;color:var(--tm-text-muted);">Ingen artikler endnu.</p>' : ''}
       </div>
     </section>
   `;
-  res.send(layout('Admin', body, '', true));
+
+  res.send(layout('Visitor Log', body, '', true));
 });
 
 app.get('/admin/new/', requireAuth, (req, res) => {
