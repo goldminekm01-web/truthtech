@@ -441,7 +441,7 @@ app.get('/sitemap.xml', async (req, res) => {
 });
 
 app.get('/admin/login', (req, res) => {
-  if (req.session.isAdmin) return res.redirect('/admin/');
+  if (isAdmin(req)) return res.redirect('/admin/');
   const body = `<section class="admin-login"><div class="admin-card"><h1>${site.name} — Admin</h1><p>Log in to manage articles.</p><form method="POST" action="/admin/login"><label for="password">Password</label><input type="password" id="password" name="password" required autocomplete="current-password"><button type="submit" class="btn">Log in</button></form></div></section>`;
   res.send(layout('Admin — Log ind', body, '', true));
 });
