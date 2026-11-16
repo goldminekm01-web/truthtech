@@ -3,11 +3,16 @@ const session = require('express-session');
 const fs = require('fs');
 const path = require('path');
 const { marked } = require('marked');
+const https = require('https');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'content', 'articles.json');
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'antigravity2024';
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GITHUB_OWNER = process.env.GITHUB_OWNER || 'goldminekm01-web';
+const GITHUB_REPO = process.env.GITHUB_REPO || 'truthtech';
+const GITHUB_API = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/content/articles.json`;
 
 // Site config (single source of truth)
 const site = {
@@ -31,8 +36,34 @@ const categories = [
   { slug: "dansk-tech", label: "Dansk tech" },
 ];
 
-// Load articles from JSON
-function loadArticles() {
+function githubRequest(method, path, body) {
+  return new Promise((resolve, reject) => {
+    const url = path.startsWith('http') ? path : `https://api.github.com${path}`;
+    const options = {
+      method,
+      headers: {
+        'User-Agent': 'TruthMedia-Admin',
+        'Authorization': GITHUB_TOKEN ? `token ${GITHUB_TOKEN}` : '',
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+      },
+    };
+    if (body) options.body = JSON.stringify(body);
+    const req = https.request(url, options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
+        catch { resolve({ status: res.statusCode, body: data }); }
+      });
+    });
+    req.on('error', reject);
+    if (options.body) req.write(options.body);
+    req.end();
+  });
+}
+
+async function loadArticles() {
   try {
     const data = fs.readFileSync(DATA_FILE, 'utf8');
     return JSON.parse(data);
@@ -41,10 +72,24 @@ function loadArticles() {
   }
 }
 
-function saveArticles(articles) {
+async function saveArticles(articles) {
   try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(articles, null, 2));
-    return { success: true };
+    // Get current file SHA from GitHub
+    const fileResp = await githubRequest('GET', GITHUB_API);
+    if (fileResp.status === 404) {
+      return { success: false, error: 'GitHub repo not found. Set GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO env vars.' };
+    }
+    const sha = fileResp.body.sha;
+    const content = Buffer.from(JSON.stringify(articles, null, 2)).toString('base64');
+    const putResp = await githubRequest('PUT', GITHUB_API, {
+      message: `Update articles via TruthMedia admin (${new Date().toISOString()})`,
+      content,
+      sha,
+    });
+    if (putResp.status >= 200 && putResp.status < 300) {
+      return { success: true };
+    }
+    return { success: false, error: `GitHub API error: ${putResp.status} ${JSON.stringify(putResp.body)}` };
   } catch (e) {
     return { success: false, error: e.message };
   }
