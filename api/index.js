@@ -917,4 +917,9 @@ app.use((req, res) => {
   res.status(404).send(layout('404', '<h1>Siden findes ikke</h1><p>Vi har ledt, men kunne ikke finde den side, du søgte. Måske er linket skrevet forkert, eller siden er flyttet.</p><div class="btn-group"><a href="/" class="btn">Gå til forsiden</a><a href="/om/" class="btn btn--ghost">Om os</a></div>'));
 });
 
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).send('<h1>Server Error</h1><p>' + err.message + '</p><a href="/">Home</a>');
+});
+
 module.exports = app;

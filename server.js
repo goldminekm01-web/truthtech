@@ -888,8 +888,8 @@ app.post('/admin/edit/:slug/', requireAuth, async (req, res) => {
   res.redirect(`/artikler/${newSlug}/`);
 });
 
-app.post('/admin/delete/:slug/', requireAuth, (req, res) => {
-  let articles = loadArticles();
+app.post('/admin/delete/:slug/', requireAuth, async (req, res) => {
+  let articles = await loadArticles();
   const result = saveArticles(articles.filter(a => a.slug !== req.params.slug));
   if (!result.success) {
     return res.status(500).send(`<h1>Save error</h1><p>${result.error}</p><a href="/admin/">Try again</a>`);
@@ -932,13 +932,13 @@ app.get('/admin/visitors/', requireAuth, (req, res) => {
 
 function escapeHtml(text) {
   if (!text) return '';
-  return String(text)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
+
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).send('<h1>Server Error</h1><p>' + err.message + '</p><a href="/">Home</a>');
+});
 
 app.listen(PORT, () => {
   console.log(`${site.name} running on http://localhost:${PORT}`);
