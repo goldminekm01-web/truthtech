@@ -1,18 +1,29 @@
 const express = require('express');
 const session = require('express-session');
-const fs = require('fs');
 const path = require('path');
 const { marked } = require('marked');
-const https = require('https');
+const admin = require('firebase-admin');
 
 const app = express();
 
-const DATA_FILE = path.join(__dirname, '..', 'content', 'articles.json');
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'antigravity2024';
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const GITHUB_OWNER = process.env.GITHUB_OWNER || 'goldminekm01-web';
-const GITHUB_REPO = process.env.GITHUB_REPO || 'truthtech';
-const GITHUB_API = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/content/articles.json`;
+
+// Initialize Firebase Admin SDK
+let adminDb;
+try {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      databaseURL: process.env.FIREBASE_DATABASE_URL,
+    });
+    adminDb = admin.database();
+  } else {
+    console.warn('FIREBASE_SERVICE_ACCOUNT not set — using in-memory fallback');
+  }
+} catch (e) {
+  console.warn('Firebase init failed:', e.message);
+}
 
 // Site config (single source of truth)
 const site = {
@@ -115,8 +126,15 @@ function githubRequest(method, path, body) {
 
 async function loadArticles() {
   try {
-    const data = fs.readFileSync(DATA_FILE, 'utf8');
-    return JSON.parse(data);
+    if (adminDb) {
+      const snapshot = await adminDb.ref('articles').once('value');
+      const data = snapshot.val();
+      if (data) {
+        return Object.keys(data).map(key => ({ id: key, ...data[key] }));
+      }
+      return [];
+    }
+    return [];
   } catch (e) {
     return [];
   }
@@ -124,32 +142,11 @@ async function loadArticles() {
 
 async function saveArticles(articles) {
   try {
-    // On Vercel serverless, filesystem is read-only — use GitHub API
-    // Locally, write to the JSON file directly
-    if (process.env.VERCEL) {
-      const fileResp = await githubRequest('GET', GITHUB_API);
-      if (fileResp.status === 404) {
-        return { success: false, error: 'GitHub repo not found. Set GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO env vars.' };
-      }
-      if (fileResp.status >= 400) {
-        return { success: false, error: `GitHub API GET failed: ${fileResp.status} — check GITHUB_TOKEN has repo scope.` };
-      }
-      const sha = fileResp.body.sha;
-      const content = Buffer.from(JSON.stringify(articles, null, 2)).toString('base64');
-      const putResp = await githubRequest('PUT', GITHUB_API, {
-        message: `Update articles via TruthMedia admin (${new Date().toISOString()})`,
-        content,
-        sha,
-      });
-      if (putResp.status >= 200 && putResp.status < 300) {
-        return { success: true };
-      }
-      return { success: false, error: `GitHub API PUT failed: ${putResp.status} — check GITHUB_TOKEN has repo scope.` };
-    } else {
-      // Local development — write to filesystem
-      fs.writeFileSync(DATA_FILE, JSON.stringify(articles, null, 2));
+    if (adminDb) {
+      await adminDb.ref('articles').set(articles);
       return { success: true };
     }
+    return { success: false, error: 'Firebase not initialized' };
   } catch (e) {
     return { success: false, error: e.message };
   }
