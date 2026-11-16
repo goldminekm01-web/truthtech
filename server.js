@@ -511,11 +511,11 @@ app.get('/admin/login', (req, res) => {
     <section class="admin-login">
       <div class="admin-card">
         <h1>${site.name} — Admin</h1>
-        <p>Log ind for at administrere artikler.</p>
+        <p>Log in to manage articles.</p>
         <form method="POST" action="/admin/login">
-          <label for="password">Adgangskode</label>
+          <label for="password">Password</label>
           <input type="password" id="password" name="password" required autocomplete="current-password">
-          <button type="submit" class="btn">Log ind</button>
+          <button type="submit" class="btn">Log in</button>
         </form>
       </div>
     </section>
@@ -546,9 +546,9 @@ app.get('/admin/', requireAuth, (req, res) => {
       <td>${formatDateDa(a.date)}</td>
       <td>${a.featured ? '★' : ''}</td>
       <td>
-        <a href="/admin/edit/${a.slug}/" class="btn btn--ghost btn--small">Rediger</a>
-        <form method="POST" action="/admin/delete/${a.slug}/" style="display:inline;" onsubmit="return confirm('Slet denne artikel?')">
-          <button type="submit" class="btn btn--ghost btn--small" style="color:#c8102e;">Slet</button>
+        <a href="/admin/edit/${a.slug}/" class="btn btn--ghost btn--small">Edit</a>
+        <form method="POST" action="/admin/delete/${a.slug}/" style="display:inline;" onsubmit="return confirm('Delete this article?')">
+          <button type="submit" class="btn btn--ghost btn--small" style="color:#c8102e;">Delete</button>
         </form>
       </td>
     </tr>
@@ -560,8 +560,8 @@ app.get('/admin/', requireAuth, (req, res) => {
         <div class="admin-header">
           <h1>Admin — ${site.name}</h1>
           <div class="admin-actions">
-            <a href="/admin/new/" class="btn">+ Ny artikel</a>
-            <a href="/admin/logout" class="btn btn--ghost">Log ud</a>
+            <a href="/admin/new/" class="btn">+ New article</a>
+            <a href="/admin/logout" class="btn btn--ghost">Log out</a>
           </div>
         </div>
         <table class="admin-table">
@@ -584,57 +584,57 @@ app.get('/admin/new/', requireAuth, (req, res) => {
   const body = `
     <section class="admin-form">
       <div class="container">
-        <h1>Ny artikel</h1>
+        <h1>New article</h1>
         <form method="POST" action="/admin/new/" class="article-form">
           <div class="form-group">
-            <label>Titel</label>
-            <input type="text" name="title" required placeholder="Eks. MitID og cybersikkerhed">
+            <label>Title</label>
+            <input type="text" name="title" required placeholder="e.g. MitID and cybersecurity">
           </div>
           <div class="form-group">
-            <label>Resumé</label>
-            <textarea name="summary" required placeholder="Kort resumé på dansk..."></textarea>
+            <label>Summary</label>
+            <textarea name="summary" required placeholder="Short summary in Danish..."></textarea>
           </div>
           <div class="form-group">
-            <label>Kategori</label>
+            <label>Category</label>
             <select name="category">${catOptions}</select>
           </div>
           <div class="form-group">
-            <label>Forfatter</label>
-            <input type="text" name="author" value="TruthMedia Redaktion" required>
+            <label>Author</label>
+            <input type="text" name="author" value="TruthMedia Editorial" required>
           </div>
           <div class="form-group">
-            <label>Dato (YYYY-MM-DD)</label>
+            <label>Date (YYYY-MM-DD)</label>
             <input type="date" name="date" required value="${new Date().toISOString().split('T')[0]}">
           </div>
           <div class="form-group">
-            <label>Læsetid (f.eks. "5 min læsning")</label>
-            <input type="text" name="readingTime" value="5 min læsning">
+            <label>Reading time (e.g. "5 min read")</label>
+            <input type="text" name="readingTime" value="5 min read">
           </div>
           <div class="form-group">
-            <label>Billede-URL</label>
+            <label>Image URL</label>
             <input type="text" name="image" value="/assets/images/placeholder.svg">
           </div>
           <div class="form-group">
-            <label>Billed-alt tekst</label>
+            <label>Image alt text</label>
             <input type="text" name="imageAlt" placeholder="Beskrivelse af billedet">
           </div>
           <div class="form-group">
-            <label>Kilder (én per linje)</label>
-            <textarea name="sources" placeholder="https://eksempel.dk/1\nhttps://eksempel.dk/2"></textarea>
+            <label>Sources (one per line)</label>
+            <textarea name="sources" placeholder="https://example.com/1\nhttps://example.com/2"></textarea>
           </div>
           <div class="form-group">
-            <label>Fremhævet (topshistorie på forsiden)?</label>
+            <label>Featured (top story on front page)?</label>
             <input type="checkbox" name="featured" value="true">
           </div>
           <div class="form-group">
-            <label>Prøveartikel?</label>
+            <label>Sample article?</label>
             <input type="checkbox" name="sample" value="true" checked>
           </div>
           <div class="form-group">
-            <label>Indhold (Markdown)</label>
-            <textarea name="content" required rows="20" placeholder="Skriv artiklen i Markdown..."></textarea>
+            <label>Content (Markdown)</label>
+            <textarea name="content" required rows="20" placeholder="Write the article in Markdown..."></textarea>
           </div>
-          <button type="submit" class="btn">Opret artikel</button>
+          <button type="submit" class="btn">Create article</button>
         </form>
       </div>
     </section>
@@ -678,69 +678,69 @@ app.get('/admin/edit/:slug/', requireAuth, (req, res) => {
   const body = `
     <section class="admin-form">
       <div class="container">
-        <h1>Rediger: ${article.title}</h1>
+        <h1>Edit: ${article.title}</h1>
         <form method="POST" action="/admin/edit/${article.slug}/" class="article-form">
           <div class="form-group">
-            <label>Titel</label>
+            <label>Title</label>
             <input type="text" name="title" required value="${escapeHtml(article.title)}">
           </div>
           <div class="form-group">
-            <label>Resumé</label>
+            <label>Summary</label>
             <textarea name="summary" required>${escapeHtml(article.summary)}</textarea>
           </div>
           <div class="form-group">
-            <label>Kategori</label>
+            <label>Category</label>
             <select name="category">${catOptions}</select>
           </div>
           <div class="form-group">
-            <label>Forfatter</label>
+            <label>Author</label>
             <input type="text" name="author" required value="${escapeHtml(article.author)}">
           </div>
           <div class="form-group">
-            <label>Dato (YYYY-MM-DD)</label>
+            <label>Date (YYYY-MM-DD)</label>
             <input type="date" name="date" required value="${article.date}">
           </div>
           <div class="form-group">
-            <label>Læsetid</label>
+            <label>Reading time</label>
             <input type="text" name="readingTime" value="${escapeHtml(article.readingTime || '')}">
           </div>
           <div class="form-group">
-            <label>Billede-URL</label>
+            <label>Image URL</label>
             <input type="text" name="image" value="${escapeHtml(article.image || '')}">
           </div>
           <div class="form-group">
-            <label>Billed-alt tekst</label>
+            <label>Image alt text</label>
             <input type="text" name="imageAlt" value="${escapeHtml(article.imageAlt || '')}">
           </div>
           <div class="form-group">
-            <label>Kilder (én per linje)</label>
+            <label>Sources (one per line)</label>
             <textarea name="sources">${escapeHtml(sourcesText)}</textarea>
           </div>
           <div class="form-group">
-            <label>Fremhævet?</label>
+            <label>Featured?</label>
             <input type="checkbox" name="featured" value="true"${article.featured ? ' checked' : ''}>
           </div>
           <div class="form-group">
-            <label>Prøveartikel?</label>
+            <label>Sample article?</label>
             <input type="checkbox" name="sample" value="true"${article.sample !== false ? ' checked' : ''}>
           </div>
           <div class="form-group">
-            <label>Indhold (Markdown)</label>
+            <label>Content (Markdown)</label>
             <textarea name="content" required rows="25">${escapeHtml(article.content || '')}</textarea>
           </div>
-          <button type="submit" class="btn">Gem ændringer</button>
-          <a href="/admin/" class="btn btn--ghost">Annuller</a>
+          <button type="submit" class="btn">Save changes</button>
+          <a href="/admin/" class="btn btn--ghost">Cancel</a>
         </form>
       </div>
     </section>
   `;
-  res.send(layout('Rediger artikel', body, '', true));
+  res.send(layout('Edit article', body, '', true));
 });
 
 app.post('/admin/edit/:slug/', requireAuth, (req, res) => {
   const articles = loadArticles();
   const idx = articles.findIndex(a => a.slug === req.params.slug);
-  if (idx === -1) return res.status(404).send('Artikel ikke fundet');
+  if (idx === -1) return res.status(404).send('Article not found');
 
   const sources = req.body.sources ? req.body.sources.split('\n').filter(s => s.trim()) : [];
   const newSlug = slugify(req.body.title);

@@ -495,11 +495,11 @@ app.get('/admin/login', (req, res) => {
     <section class="admin-login">
       <div class="admin-card">
         <h1>${site.name} — Admin</h1>
-        <p>Log ind for at administrere artikler.</p>
+        <p>Log in to manage articles.</p>
         <form method="POST" action="/admin/login">
-          <label for="password">Adgangskode</label>
+          <label for="password">Password</label>
           <input type="password" id="password" name="password" required autocomplete="current-password">
-          <button type="submit" class="btn">Log ind</button>
+          <button type="submit" class="btn">Log in</button>
         </form>
       </div>
     </section>
@@ -512,7 +512,7 @@ app.post('/admin/login', (req, res) => {
     req.session.isAdmin = true;
     res.redirect('/admin/');
   } else {
-    res.status(401).send('<h1>Forkert adgangskode</h1><a href="/admin/login">Prøv igen</a>');
+    res.status(401).send('<h1>Wrong password</h1><a href="/admin/login">Try again</a>');
   }
 });
 
@@ -544,8 +544,8 @@ app.get('/admin/', requireAuth, (req, res) => {
         <div class="admin-header">
           <h1>Admin — ${site.name}</h1>
           <div class="admin-actions">
-            <a href="/admin/new/" class="btn">+ Ny artikel</a>
-            <a href="/admin/logout" class="btn btn--ghost">Log ud</a>
+            <a href="/admin/new/" class="btn">+ New article</a>
+            <a href="/admin/logout" class="btn btn--ghost">Log out</a>
           </div>
         </div>
         <table class="admin-table">
@@ -571,40 +571,40 @@ app.get('/admin/new/', requireAuth, (req, res) => {
         <h1>Ny artikel</h1>
         <form method="POST" action="/admin/new/" class="article-form">
           <div class="form-group">
-            <label>Titel</label>
-            <input type="text" name="title" required placeholder="Eks. MitID og cybersikkerhed">
+            <label>Title</label>
+            <input type="text" name="title" required placeholder="e.g. MitID and cybersecurity">
           </div>
           <div class="form-group">
-            <label>Resumé</label>
-            <textarea name="summary" required placeholder="Kort resumé på dansk..."></textarea>
+            <label>Summary</label>
+            <textarea name="summary" required placeholder="Short summary in Danish..."></textarea>
           </div>
           <div class="form-group">
             <label>Kategori</label>
             <select name="category">${catOptions}</select>
           </div>
           <div class="form-group">
-            <label>Forfatter</label>
-            <input type="text" name="author" value="TruthMedia Redaktion" required>
+            <label>Author</label>
+            <input type="text" name="author" value="TruthMedia Editorial" required>
           </div>
           <div class="form-group">
             <label>Dato (YYYY-MM-DD)</label>
             <input type="date" name="date" required value="${new Date().toISOString().split('T')[0]}">
           </div>
           <div class="form-group">
-            <label>Læsetid (f.eks. "5 min læsning")</label>
-            <input type="text" name="readingTime" value="5 min læsning">
+            <label>Reading time (e.g. "5 min read")</label>
+            <input type="text" name="readingTime" value="5 min read">
           </div>
           <div class="form-group">
-            <label>Billede-URL</label>
+            <label>Image URL</label>
             <input type="text" name="image" value="/assets/images/placeholder.svg">
           </div>
           <div class="form-group">
-            <label>Billed-alt tekst</label>
+            <label>Image alt text</label>
             <input type="text" name="imageAlt" placeholder="Beskrivelse af billedet">
           </div>
           <div class="form-group">
             <label>Kilder (én per linje)</label>
-            <textarea name="sources" placeholder="https://eksempel.dk/1\nhttps://eksempel.dk/2"></textarea>
+            <textarea name="sources" placeholder="https://example.com/1\nhttps://example.com/2"></textarea>
           </div>
           <div class="form-group">
             <label>Fremhævet (topshistorie på forsiden)?</label>
@@ -689,11 +689,11 @@ app.get('/admin/edit/:slug/', requireAuth, (req, res) => {
             <input type="text" name="readingTime" value="${escapeHtml(article.readingTime || '')}">
           </div>
           <div class="form-group">
-            <label>Billede-URL</label>
+            <label>Image URL</label>
             <input type="text" name="image" value="${escapeHtml(article.image || '')}">
           </div>
           <div class="form-group">
-            <label>Billed-alt tekst</label>
+            <label>Image alt text</label>
             <input type="text" name="imageAlt" value="${escapeHtml(article.imageAlt || '')}">
           </div>
           <div class="form-group">
