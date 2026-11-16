@@ -185,6 +185,7 @@ section {
   padding: 0 var(--tm-space-sm);
   width: 100%;
   max-width: 100%;
+  flex-wrap: nowrap;
 }
 @media (min-width: 768px) {
   .header-inner { height: var(--tm-header-height); padding: 0 var(--tm-space-md); }
@@ -198,6 +199,11 @@ section {
   min-width: 0;
 }
 .logo:hover { color: var(--tm-text); }
+.logo-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .logo-mark {
   display: inline-flex; align-items: center; justify-content: center;
   width: 1.15em; height: 1.15em; border-radius: 50%;

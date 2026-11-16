@@ -119,7 +119,7 @@ function layout(title, body, extraMeta = '', isAdmin = false) {
       </nav>
       <div class="header-actions">
         <button class="theme-toggle" id="themeToggle" aria-label="Skift til mørk tilstand">🌙</button>
-        ${isAdmin ? `<a href="/admin/" class="btn">Admin</a>` : `<a href="/admin/login" class="btn btn--ghost">Log ind</a>`}
+        ${isAdmin ? `<a href="/admin/" class="btn">Admin</a>` : ''}
       </div>
     </div>
   </header>
