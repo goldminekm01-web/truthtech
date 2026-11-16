@@ -1,11 +1,13 @@
 const express = require('express');
-const session = require('express-session');
+const cookieParser = require('cookie-parser');
 const path = require('path');
 const { marked } = require('marked');
 const admin = require('firebase-admin');
 
 const app = express();
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'antigravity2024';
+const ADMIN_COOKIE = 'tm_admin';
+const ADMIN_COOKIE_SECRET = process.env.ADMIN_COOKIE_SECRET || 'truthmedia-admin-secret-change-in-production';
 
 // ---------- Firestore: database / truth ----------
 let adminDb;
@@ -274,12 +276,23 @@ function recordVisitor(req) {
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(session({ secret: 'truthmedia-secret-key-change-in-production', resave: false, saveUninitialized: false, cookie: { maxAge: 24 * 60 * 60 * 1000, secure: true, sameSite: 'lax' } }));
-
+app.use(cookieParser(ADMIN_COOKIE_SECRET));
 app.use((req, res, next) => { recordVisitor(req); next(); });
 
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.VERCEL === '1',
+  sameSite: 'lax',
+  maxAge: 24 * 60 * 60 * 1000,
+  signed: true,
+};
+
+function isAdmin(req) {
+  return req.signedCookies && req.signedCookies[ADMIN_COOKIE] === '1';
+}
+
 function requireAuth(req, res, next) {
-  if (!req.session.isAdmin) return res.redirect('/admin/login');
+  if (!isAdmin(req)) return res.redirect('/admin/login');
   next();
 }
 
@@ -438,14 +451,21 @@ app.get('/admin/login', (req, res) => {
 
 app.post('/admin/login', (req, res) => {
   try {
-    if (req.body.password === ADMIN_PASSWORD) { req.session.isAdmin = true; res.redirect('/admin/'); }
-    else { res.status(401).send('<h1>Wrong password</h1><a href="/admin/login">Try again</a>'); }
+    if (req.body.password === ADMIN_PASSWORD) {
+      res.cookie(ADMIN_COOKIE, '1', cookieOptions);
+      res.redirect('/admin/');
+    } else {
+      res.status(401).send('<h1>Wrong password</h1><a href="/admin/login">Try again</a>');
+    }
   } catch (e) {
     res.status(500).send('<h1>Fejl</h1><p>' + e.message + '</p>');
   }
 });
 
-app.get('/admin/logout', (req, res) => { req.session.destroy(); res.redirect('/admin/login'); });
+app.get('/admin/logout', (req, res) => {
+  res.clearCookie(ADMIN_COOKIE, cookieOptions);
+  res.redirect('/admin/login');
+});
 
 app.get('/admin/', requireAuth, (req, res) => {
   try {

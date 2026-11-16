@@ -1,5 +1,5 @@
 const express = require('express');
-const session = require('express-session');
+const cookieParser = require('cookie-parser');
 const path = require('path');
 const { marked } = require('marked');
 const admin = require('firebase-admin');
@@ -7,22 +7,22 @@ const admin = require('firebase-admin');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'antigravity2024';
+const ADMIN_COOKIE = 'tm_admin';
+const ADMIN_COOKIE_SECRET = process.env.ADMIN_COOKIE_SECRET || 'truthmedia-admin-secret-change-in-production';
 
 // ---------- Firestore: database / truth ----------
 let adminDb;
 try {
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
     adminDb = admin.firestore();
   }
 } catch (e) {
   console.warn('Firebase init failed (non-fatal):', e.message);
 }
 
-// ---------- Seed articles (fallback when Firestore unavailable) ----------
+// ---------- Seed articles ----------
 const SEED_ARTICLES = [
   {
     slug: "mitid-cybersikkerhed-2026",
@@ -197,13 +197,12 @@ function formatDateDa(dateVal) {
 
 function toDate(dateVal) {
   if (!dateVal) return new Date();
-  if (dateVal.toDate && typeof dateVal.toDate === 'function') return dateVal.toDate(); // Firestore Timestamp
+  if (dateVal.toDate && typeof dateVal.toDate === 'function') return dateVal.toDate();
   if (dateVal instanceof Date) return dateVal;
   return new Date(dateVal);
 }
 
 function toDateInput(dateVal) {
-  // Returns YYYY-MM-DD for <input type="date">
   try {
     const d = toDate(dateVal);
     return d.toISOString().split('T')[0];
@@ -273,18 +272,31 @@ function recordVisitor(req) {
   return visitor;
 }
 
-app.use(express.static(path.join(__dirname, 'api', 'public')));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(session({ secret: 'truthmedia-secret-key-change-in-production', resave: false, saveUninitialized: false, cookie: { maxAge: 24 * 60 * 60 * 1000, secure: true, sameSite: 'lax' } }));
+// ---------- Cookie-based admin auth (works on serverless) ----------
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.VERCEL === '1',
+  sameSite: 'lax',
+  maxAge: 24 * 60 * 60 * 1000,
+  signed: true,
+};
 
-app.use((req, res, next) => { recordVisitor(req); next(); });
+function isAdmin(req) {
+  return req.signedCookies && req.signedCookies[ADMIN_COOKIE] === '1';
+}
 
 function requireAuth(req, res, next) {
-  if (!req.session.isAdmin) return res.redirect('/admin/login');
+  if (!isAdmin(req)) return res.redirect('/admin/login');
   next();
 }
 
+app.use(express.static(path.join(__dirname, 'api', 'public')));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(cookieParser(ADMIN_COOKIE_SECRET));
+app.use((req, res, next) => { recordVisitor(req); next(); });
+
+// ---------- Layout ----------
 function layout(title, body, extraMeta = '', isAdmin = false) {
   const description = title.includes('TruthMedia') ? site.tagline : `${title} — ${site.name}`;
   const canonical = title === 'Forside' ? site.url : `${site.url}/`;
@@ -330,6 +342,8 @@ function cardHtml(article, isFeatured = false) {
   return `<article class="article-card reveal${isFeatured ? ' featured' : ''}"><a href="/artikler/${article.slug}/" class="card-link"><img src="${imageUrl}" alt="${article.imageAlt || 'Artikelbillede'}" class="card-image" loading="lazy"><div class="card-body">${isSample ? '<span class="badge badge-sample">Prøve</span>' : ''}<span class="card-category">${article.category}</span><h2 class="card-title">${article.title}</h2><p class="card-excerpt">${article.summary}</p><div class="card-footer"><span class="card-meta">${article.author} · ${formatDateDa(article.date)} · ${readingTime}</span><span class="card-arrow">→</span></div></div></a></article>`;
 }
 
+// ============ ROUTES ============
+
 app.get('/', async (req, res) => {
   try {
     const articles = (await loadArticles()).sort((a, b) => toDate(b.date) - toDate(a.date));
@@ -367,7 +381,7 @@ app.get('/kategori/:slug/', async (req, res) => {
   try {
     const cat = categories.find(c => c.slug === req.params.slug);
     if (!cat) return res.status(404).send(layout('404', '<h1>Kategori ikke fundet</h1><a href="/" class="btn">Gå til forsiden</a>'));
-    const articles = (await loadArticles()).filter(a => a.category === cat.slug).sort((a, b) => new Date(b.date) - new Date(a.date));
+    const articles = (await loadArticles()).filter(a => a.category === cat.slug).sort((a, b) => toDate(b.date) - toDate(a.date));
     let body = `<section class="reveal"><div class="container"><h1 class="category-title">${cat.label}</h1><p class="category-desc">Artikler inden for ${cat.label.toLowerCase()}.</p><div class="article-grid">${articles.length > 0 ? articles.map(a => cardHtml(a)).join('') : '<p class="empty">Ingen artikler i denne kategori endnu.</p>'}</div></div></section>`;
     res.send(layout(`Kategori: ${cat.label}`, body));
   } catch (e) {
@@ -432,22 +446,30 @@ app.get('/sitemap.xml', async (req, res) => {
   }
 });
 
+// ---------- Admin (cookie auth) ----------
 app.get('/admin/login', (req, res) => {
-  if (req.session.isAdmin) return res.redirect('/admin/');
+  if (isAdmin(req)) return res.redirect('/admin/');
   const body = `<section class="admin-login"><div class="admin-card"><h1>${site.name} — Admin</h1><p>Log in to manage articles.</p><form method="POST" action="/admin/login"><label for="password">Password</label><input type="password" id="password" name="password" required autocomplete="current-password"><button type="submit" class="btn">Log in</button></form></div></section>`;
   res.send(layout('Admin — Log ind', body, '', true));
 });
 
 app.post('/admin/login', (req, res) => {
   try {
-    if (req.body.password === ADMIN_PASSWORD) { req.session.isAdmin = true; res.redirect('/admin/'); }
-    else { res.status(401).send('<h1>Wrong password</h1><a href="/admin/login">Try again</a>'); }
+    if (req.body.password === ADMIN_PASSWORD) {
+      res.cookie(ADMIN_COOKIE, '1', cookieOptions);
+      res.redirect('/admin/');
+    } else {
+      res.status(401).send('<h1>Wrong password</h1><a href="/admin/login">Try again</a>');
+    }
   } catch (e) {
     res.status(500).send('<h1>Fejl</h1><p>' + e.message + '</p>');
   }
 });
 
-app.get('/admin/logout', (req, res) => { req.session.destroy(); res.redirect('/admin/login'); });
+app.get('/admin/logout', (req, res) => {
+  res.clearCookie(ADMIN_COOKIE, cookieOptions);
+  res.redirect('/admin/login');
+});
 
 app.get('/admin/', requireAuth, (req, res) => {
   try {
@@ -491,7 +513,7 @@ app.get('/admin/edit/:slug/', requireAuth, async (req, res) => {
     if (!article) return res.status(404).send('Edit article not found');
     const catOptions = categories.map(c => `<option value="${c.slug}"${c.slug === article.category ? ' selected' : ''}>${c.label}</option>`).join('');
     const sourcesText = Array.isArray(article.sources) ? article.sources.join('\n') : (article.sources || '');
-    const body = `<section class="admin-form"><div class="container"><h1>Edit: ${article.title}</h1><form method="POST" action="/admin/edit/${article.slug}/" class="article-form"><div class="form-group"><label>Title</label><input type="text" name="title" required value="${escapeHtml(article.title)}"></div><div class="form-group"><label>Summary</label><textarea name="summary" required>${escapeHtml(article.summary)}</textarea></div><div class="form-group"><label>Category</label><select name="category">${catOptions}</select></div><div class="form-group"><label>Author</label><input type="text" name="author" required value="${escapeHtml(article.author)}"></div><div class="form-group"><label>Date (YYYY-MM-DD)</label><input type="date" name="date" required value="${article.date}"></div><div class="form-group"><label>Reading time</label><input type="text" name="readingTime" value="${escapeHtml(article.readingTime || '')}"></div><div class="form-group"><label>Image URL</label><input type="text" name="image" value="${escapeHtml(article.image || '')}"></div><div class="form-group"><label>Image alt text</label><input type="text" name="imageAlt" value="${escapeHtml(article.imageAlt || '')}"></div><div class="form-group"><label>Sources (one per line)</label><textarea name="sources">${escapeHtml(sourcesText)}</textarea></div><div class="form-group"><label>Featured?</label><input type="checkbox" name="featured" value="true"${article.featured ? ' checked' : ''}></div><div class="form-group"><label>Sample article?</label><input type="checkbox" name="sample" value="true"${article.sample !== false ? ' checked' : ''}></div><div class="form-group"><label>Content (Markdown)</label><textarea name="content" required rows="25">${escapeHtml(article.content || '')}</textarea></div><button type="submit" class="btn">Save changes</button><a href="/admin/" class="btn btn--ghost">Cancel</a></form></div></section>`;
+    const body = `<section class="admin-form"><div class="container"><h1>Edit: ${article.title}</h1><form method="POST" action="/admin/edit/${article.slug}/" class="article-form"><div class="form-group"><label>Title</label><input type="text" name="title" required value="${escapeHtml(article.title)}"></div><div class="form-group"><label>Summary</label><textarea name="summary" required>${escapeHtml(article.summary)}</textarea></div><div class="form-group"><label>Category</label><select name="category">${catOptions}</select></div><div class="form-group"><label>Author</label><input type="text" name="author" required value="${escapeHtml(article.author)}"></div><div class="form-group"><label>Date (YYYY-MM-DD)</label><input type="date" name="date" required value="${toDateInput(article.date)}"></div><div class="form-group"><label>Reading time</label><input type="text" name="readingTime" value="${escapeHtml(article.readingTime || '')}"></div><div class="form-group"><label>Image URL</label><input type="text" name="image" value="${escapeHtml(article.image || '')}"></div><div class="form-group"><label>Image alt text</label><input type="text" name="imageAlt" value="${escapeHtml(article.imageAlt || '')}"></div><div class="form-group"><label>Sources (one per line)</label><textarea name="sources">${escapeHtml(sourcesText)}</textarea></div><div class="form-group"><label>Featured?</label><input type="checkbox" name="featured" value="true"${article.featured ? ' checked' : ''}></div><div class="form-group"><label>Sample article?</label><input type="checkbox" name="sample" value="true"${article.sample !== false ? ' checked' : ''}></div><div class="form-group"><label>Content (Markdown)</label><textarea name="content" required rows="25">${escapeHtml(article.content || '')}</textarea></div><button type="submit" class="btn">Save changes</button><a href="/admin/" class="btn btn--ghost">Cancel</a></form></div></section>`;
     res.send(layout('Edit article', body, '', true));
   } catch (e) {
     res.status(500).send('<h1>Fejl</h1><p>' + e.message + '</p>');
