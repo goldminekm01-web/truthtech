@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450" fill="none">
+  <rect width="800" height="450" fill="#EAE8DD"/>
+  <rect x="60" y="60" width="260" height="140" rx="12" fill="#D8D5C9"/>
+  <circle cx="560" cy="130" r="44" fill="#C8102E" opacity="0.12"/>
+  <rect x="520" y="260" width="220" height="130" rx="10" fill="#D8D5C9"/>
+  <circle cx="140" cy="340" r="20" fill="#C8102E" opacity="0.10"/>
+  <line x1="60" y1="390" x2="740" y2="390" stroke="#CFCBC1" stroke-width="2"/>
+  <text x="400" y="230" font-family="Georgia, serif" font-size="22" fill="#8E8A7E" text-anchor="middle">TruthMedia</text>
+  <text x="400" y="260" font-family="Inter, sans-serif" font-size="14" fill="#5A564E" text-anchor="middle">Platzhalterbillede</text>
+</svg>
