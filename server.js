@@ -34,7 +34,7 @@ const SEED_ARTICLES = [
     image: "/assets/images/placeholder.svg",
     imageAlt: "MitID login-skærm på smartphone",
     sources: ["https://www.mitid.dk/", "https://www.cybersikkerhed.dk/"],
-    featured: true,
+    featured: false,
     readingTime: "5 min læsning",
     sample: true,
     content: "# MitID og cybersikkerhed\n\nMitID er Danmarks fælles digitale identitet, der bruges af millioner af danskere til netbank, offentlige tjenester og private tjenester. Men med udbredelsen følger nye sikkerhedsudfordringer.\n\n## Hvad du skal gøre\n\nBrug totrinsgodkendelse, del aldrig din kode, og hold din app opdateret.\n\n## Kilder\n\nSe MitID's egne sikkerhedsvejledninger for de nyeste anbefalinger.",
@@ -144,9 +144,25 @@ const SEED_ARTICLES = [
     sample: true,
     content: "# Cybersikkerhed i kommuner\n\nCyberangreb mod danske kommuner er steget, og det har skubbet til investeringer i bedre digital sikkerhed.\n\n## Tiltag\n\nTo-faktor-godkendelse, bedre backup og medarbejdertræning.\n\n## Ansvar\n\nBorgernes data skal beskyttes, uanset om de ligger i en kommune eller en privat virksomhed.",
   },
+  {
+    slug: "lukas-isaksen-tinder-krypto-svindel",
+    title: "Lukas Isaksen: Tinder-svindleren der narrede kvinder til kryptoinvesteringer",
+    summary: "En gennemgang af et fiktivt tilfælde om en mand, der brugte datingappen Tinder til at rekruttere kvinder til falske kryptoinvesteringer og forsvandt med deres opsparing. Historien er fiktiv, men metoderne er baseret på virkelige svindelmønstre.",
+    category: "cybersikkerhed",
+    author: "TruthMedia Redaktion",
+    date: "2026-11-16",
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcShVJC6s5OZt2_tzO4-LBKO2KpsngEqXDRKYkwq-go0AQ&s=10",
+    imageAlt: "Illustration af smartphone med datingapp og kryptovaluta",
+    sources: [],
+    featured: true,
+    readingTime: "8 min læsning",
+    sample: true,
+    content: "# Lukas Isaksen: Tinder-svindleren der narrede kvinder til kryptoinvesteringer\n\nI løbet af de seneste måneder har en sag fra Storkøbenhavn vakt bekymring hos både politi og cybersikkerhedseksperter. En 34-årig mand ved navn Lukas Isaksen oprettede profiler på datingappen Tinder, hvor han præsenterede sig som en succesfuld erhvervsdrivende med stor erfaring inden for kryptovaluta. Ifølge sagsfremstillingen kontaktede han kvinder, opbyggede tillid gennem ugelange samtaler, og overtalte dem til at investere penge i et kryptovalutaprojekt, der ikke fandtes.\n\nDa kvinderne senere forsøgte at trække deres penge ud, var både Isaksen og investeringsplatformen forsvundet.\n\n## Hvordan svindlen fungerede\n\nIfølge beretningen gik Isaksen frem på en måde, der er karakteristisk for såkaldte romance scams eller pig butchering-svindel, hvor svindleren først opbygger et følelsesmæssigt forhold til ofret, før penge emnerne introduceres.\n\n### Trin 1: Kontakt på Tinder\n\nIsaksen oprettede flere profiler med professionelle billeder, hvor han optrådte som velklædt, veluddannet og økonomisk uafhængig. I profilteksten nævnte han blandt andet investeringer, finansiel frihed og kryptovaluta.\n\n### Trin 2: Flytning til privat chat\n\nEfter nogle dages samtale på Tinder foreslog han at flytte samtalen til en privat beskedtjeneste som WhatsApp eller Signal. Dette er et klassisk træk i svindelsager, da det gør det sværere for platformene at overvåge mistænkelig aktivitet.\n\n### Trin 3: Introduktion til kryptovaluta\n\nIsaksen begyndte at tale om sine egne succesfulde investeringer i kryptovaluta. Han viste skærmbilleder af påståede gevinster og fortalte, at han kunne hjælpe kvinderne med at opnå lignende resultater. Han anbefalede en bestemt investeringsplatform, som ifølge sagen var falsk.\n\n### Trin 4: Indbetaling af penge\n\nKvinderne blev bedt om at overføre penge til en kryptowallet eller direkte til platformen. Beløbene startede ofte mindre 5.000-10.000 kroner for at skabe tillid. Når de første gevinster blev vist på skærmen manipuleret, blev de overtalt til at investere større beløb, op til flere hundredtusinde kroner.\n\n### Trin 5: Forsvinden\n\nDa kvinderne forsøgte at hæve deres penge, mødte de pludselig tekniske problemer, gebyrer eller krav om yderligere indbetalinger før udbetaling. Kort efter var Isaksen slettet fra alle platforme, og investeringshjemmesiden var utilgængelig.\n\n## Konsekvenser for ofrene\n\nIfølge sagsfremstillingen mistede mindst tre kvinder i Københavnsområdet samlet set over 400.000 kroner. En af kvinderne havde lånt penge i banken for at investere, mens en anden havde brugt en stor del af sin opsparing.\n\nUd over det økonomiske tab oplevede kvinderne følelsesmæssigt trauma og en følelse af skam, som i nogle tilfælde forsinkede anmeldelsen til politiet.\n\n## Røde flag: Sådan genkender du en investeringssvindel\n\nCybersikkerhedseksperter fremhæver følgende advarselstegn:\n\n1. Du møder personen kun online Aldrig overfør penge til nogen, du ikke har mødt fysisk og kender godt.\n2. Løfter om hurtige, høje afkast Hvis det lyder for godt til at være sandt, er det som regel også det.\n3. Pres for at handle hurtigt Svindlere skaber ofte kunstig hast muligheden udløber snart.\n4. Anmodning om kryptovaluta Kryptovaluta er vanskeligt at spore og næsten umuligt at få tilbage efter overførsel.\n5. Flytning af samtalen væk fra platformen Vær opmærksom, hvis personen hurtigt vil flytte fra Tinder til privat beskedtjeneste.\n6. Manglende verificerbar information Tjek om virksomheden eller personen findes i officielle registre.\n\n## Hvad gør du, hvis du er blevet udsat?\n\nAnmeld sagen til politiet hurtigst muligt. Gem alle skærmbilleder, chats og transaktionsbeviser. Kontakt din bank, selv om det kan være svært at få kryptovaluta-transaktioner tilbage. Oplys venner og familie, så de også kan være på vagt.\n\n---\n\nVIGTIG DISCLAIMER: Denne artikel er fuldstændig fiktiv. Personen Lukas Isaksen eksisterer ikke, og den beskrevne sag har ikke fundet sted i virkeligheden. Artiklen er skrevet som en uddannende case for at sensibilisere læsere om risikoen ved investeringssvindel og romance scams, især dem der involverer kryptovaluta og datingapps. Metoderne beskrevet i artiklen er baseret på generelle mønstre fra virkelige svindelsager, men navne, datoer, beløb og detaljer er opfundet. Vær altid kritisk over for investeringstilbud fra personer du møder online.",
+  },
 ];
 
 let articlesCache = [...SEED_ARTICLES];
+
 
 async function loadArticles() {
   try {
