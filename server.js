@@ -383,7 +383,7 @@ app.get('/artikler/:slug/', async (req, res) => {
     if (article.sources && article.sources.length > 0) {
       body += `<section class="sources"><h3>Kilder</h3><ul>${article.sources.map(src => `<li><a href="${src}" target="_blank" rel="noopener noreferrer">${src}</a></li>`).join('')}</ul></section>`;
     }
-    body += `<div class="share"><a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(site.url + '/artikler/' + article.slug + '/')}" target="_blank" class="share-btn" aria-label="Del på Facebook">Facebook</a><a href="https://x.com/intent/tweet?text=${encodeURIComponent(article.title)}&url=${encodeURIComponent(site.url + '/artikler/' + article.slug + '/')}" target="_blank" class="share-btn" aria-label="Del på X">X</a><a href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(site.url + '/artikler/' + article.slug + '/')}" target="_blank" class="share-btn" aria-label="Del på LinkedIn">LinkedIn</a><a href="mailto:?subject=${encodeURIComponent(article.title)}&body=${encodeURIComponent('Læs artiklen: ' + site.url + '/artikler/' + article.slug + '/')}" class="share-btn" aria-label="Del via e-mail">E-mail</a></div>`;
+    body += `<div class="share"><a href="mailto:?subject=${encodeURIComponent(article.title)}&body=${encodeURIComponent('Læs artiklen: ' + site.url + '/artikler/' + article.slug + '/')}" class="share-btn" aria-label="Del via e-mail">E-mail</a></div>`;
     if (related.length > 0) {
       body += `<section class="related"><h3>Relaterede artikler</h3><div class="related-grid">${related.map(r => `<a href="/artikler/${r.slug}/" class="related-card"><span class="related-cat">${r.category}</span><h2 class="related-title">${r.title}</h2></a>`).join('')}</div></section>`;
     }
